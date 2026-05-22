@@ -2,7 +2,7 @@ EECE.4862/5862 Embedded Artificial Intelligence
 
 # Lab 1: Microcontroller Programming + First TFLite Micro Inference
 
-*last update: 5/13/26*
+*last update: 5/20/26*
 
 ## General Information
 
@@ -34,7 +34,7 @@ The lab has two parts (A and B). Complete the following requirements:
 
 (6) Install the **Arduino_TensorFlowLite** library from the **`Arduino_TensorFlowLite.zip`** in this lab folder via **Sketch → Include Library → Add .ZIP Library…**. Compile and flash the hello_world sketch (the first compile takes 1–2 minutes). Verify three independent indicators that the sketch is running correctly: (a) the Nano's orange on-board LED fades **sinusoidally** with a ~10 s period; (b) the Serial Monitor at 9600 baud prints integers cycling smoothly between 0 and 255; (c) the Serial Plotter at 9600 baud draws a clean sine wave between 0 and 255.
 
-(7) Starting from the **`starter/b3-hello-world-instrumented/`** skeleton (a copy of the working hello_world sketch with two `// TODO(student) B.3:` blocks marking where the timing goes), instrument it to measure **inference latency**: wrap each `Invoke()` call with `micros()` before and after and report the **min, mean, and max** over at least 100 successive inferences. Record **flash usage** and **RAM usage** from the Arduino IDE compile output (printed after a successful compile).
+(7) Starting from the **`starter/b3-hello-world-instrumented/`** skeleton (a copy of the working hello_world sketch with two `// TODO(student) B.3:` blocks marking where the timing goes), instrument it to measure **inference latency**: wrap each `Invoke()` call with `micros()` before and after and report the **min, mean, and max** over at least 100 successive inferences. Record **flash usage** and **RAM usage** from the Arduino IDE compile output (printed after a successful compile). **Print the latency summary line with `Serial.print()` / `Serial.println()`, not `MicroPrintf`** — the TFLM v2.4.0-ALPHA `MicroPrintf` bundled with this lab does not accept the `l` length modifier, so `%lu` for the `unsigned long` that `micros()` returns prints garbage. Also note that `micros()` on the nRF52840 has ~4 µs resolution; the mean over the window is the meaningful number (the min may collapse to a single quantum across many samples).
 
 (8) Write two short reflection paragraphs (3–5 sentences each) in your lab report: (a) Given your measured flash and RAM consumption, roughly what fraction of the Nano's 1 MB flash and 256 KB SRAM is the model + TFLM runtime using? Could you realistically fit a model that is 10×, 50×, or 100× larger? (b) The hello-world model is a *regression* model. Describe one embedded AI application from Lecture 1 that would also be a regression problem, and one that would be a classification problem.
 
@@ -48,7 +48,7 @@ The lab has two parts (A and B). Complete the following requirements:
 
 (10) **Option C.2 — IMU-driven LED blink rate.** Install the `Arduino_BMI270_BMM150` library and use the on-board BMI270 IMU to read the magnitude of the accelerometer vector each loop iteration. Map that magnitude to an LED blink rate (slower when the board is still, faster when moving). Include a short serial log of the acceleration magnitudes and corresponding blink intervals.
 
-(11) **Option C.3 — Latency under three optimization levels.** Re-compile the hello_world sketch (with the latency instrumentation from (7)) under three optimization settings (`-O0`, `-O2`, `-O3`) by editing the Mbed Nano core's `platform.local.txt` or using the Arduino CLI's `--build-property`. Report inference latency (mean over 100 invocations) and final flash size for each level. Two short paragraphs of analysis: what does each level cost, and what changes at runtime?
+(11) **Option C.3 — Latency under three optimization levels.** Re-compile the hello_world sketch (with the latency instrumentation from (7)) under three optimization settings (`-O0`, `-O2`, `-O3`) and report inference latency (mean over 100 invocations) and final flash size for each level. Two short paragraphs of analysis: what does each level cost, and what changes at runtime? Concrete steps: (i) Locate the Mbed Nano core directory: macOS `~/Library/Arduino15/packages/arduino/hardware/mbed_nano/<version>/`, Linux `~/.arduino15/packages/arduino/hardware/mbed_nano/<version>/`, Windows `%LOCALAPPDATA%\Arduino15\packages\arduino\hardware\mbed_nano\<version>\` — it contains `platform.txt`. **Do not edit `platform.txt`** (the IDE overwrites it on core updates). (ii) Create a sibling file named **`platform.local.txt`** with the single line `compiler.optimization_flags=-O3`. (iii) Fully quit and restart the Arduino IDE, then enable **File → Preferences → "Show verbose output during: compile"** and verify you see `-O3` in the gcc command lines (the core's default is `-Os`). (iv) Record mean latency over 100 inferences and the flash size; then change the one line to `-O2`, rebuild, record; then `-O0`, rebuild, record. (No further IDE restart needed after the first.) Sanity check: all three numbers should differ from each other and from the IDE default — if two levels match, the override didn't take effect. *(Alternative: pass `--build-property "compiler.optimization_flags=-O3"` to the Arduino CLI if you prefer the command line.)*
 
 **Hints:**
 

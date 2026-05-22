@@ -18,7 +18,13 @@ The two `TODO(student) B.3:` blocks in
    accumulators (count, sum, min, max).
 2. Around the `Invoke()` call in `loop()` — time it with `micros()`,
    accumulate, and every >= 100 inferences print a `[LAT]` summary
-   line (then reset the window).
+   line (then reset the window). **Use `Serial.print()` for the
+   `[LAT]` line, not `MicroPrintf`** — the bundled TFLM v2.4.0-ALPHA
+   `MicroPrintf` doesn't support the `l` length modifier, so `%lu`
+   for the `unsigned long` that `micros()` returns prints garbage.
+   Also note: `micros()` on the nRF52840 has ~4 µs resolution, so the
+   min may collapse to one value across many samples — the mean over
+   the window is the meaningful number.
 
 **Build and flash it first, unmodified**, to confirm it runs (LED
 fades, Serial Plotter shows the sine wave). Then add your

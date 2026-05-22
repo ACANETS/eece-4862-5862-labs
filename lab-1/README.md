@@ -260,8 +260,11 @@ nRF52840.
 
 **Deliverables for B.2:**
 
-- A screenshot of the Serial Plotter showing at least 1.5 full cycles
-  of the sine wave.
+- A screenshot of the Serial Plotter showing one clearly recognizable
+  cycle of the sine wave (at least one peak and one trough visible).
+  The IDE 2.x plotter's rolling window is too narrow to capture much
+  more than that in a single frame — if you want to show more, you may
+  attach 2–3 stitched screenshots or a short screen recording instead.
 - A one-sentence note in your lab report confirming the Nano's
   built-in LED fades visibly in sync with the plot.
 
@@ -280,6 +283,22 @@ instrumentation to report:
   before and after; print the elapsed microseconds for at least 100
   successive inferences and report the **min, mean, and max** in your
   lab report.
+
+> **Print the latency line with `Serial.print()` / `Serial.println()`,
+> not `MicroPrintf`.** The TFLM v2.4.0-ALPHA `MicroPrintf` bundled with
+> this lab does not accept the `l` length modifier, so `%lu` for the
+> `unsigned long` that `micros()` returns prints garbage. `Serial`
+> handles `unsigned long` natively. (If you really want to keep
+> `MicroPrintf`, cast each value to `unsigned int` and use `%u` — `int`
+> and `long` are both 32 bits on the nRF52840, so no precision is
+> lost.)
+
+> **`micros()` resolution caveat.** On the nRF52840 the underlying
+> microsecond timer has roughly **4 µs** granularity. A single
+> `Invoke()` that takes only a handful of microseconds will quantize
+> visibly — the **mean over 100 inferences** is the meaningful number;
+> the **min** may collapse to the same value across many samples.
+> Report your numbers in that light.
 
 **Deliverable for B.3:** a small table in your lab report with
 the four numbers (flash, RAM, latency min/mean/max). A serial log of
@@ -325,14 +344,63 @@ acceleration magnitudes and corresponding blink intervals.
 
 ### Option C.3 — Latency under three optimization levels
 
-Re-compile the B.3 hello-world sketch under three optimization
-settings. The Arduino IDE doesn't expose all gcc levels directly, but
-you can edit the `platform.local.txt` for the Mbed Nano core to add
-`-O0`, `-O2`, and `-O3` builds (or use the Arduino CLI's
-`--build-property` to override). Report the inference latency (mean
-over 100 invocations) and final flash size for each. Two short
-paragraphs of analysis: at what cost does each optimization level
-come, and what would change at runtime?
+Re-compile the B.3 instrumented hello-world sketch under three
+optimization settings — `-O0`, `-O2`, `-O3` — and report mean
+inference latency (over 100 invocations) and final flash size for
+each. Two short paragraphs of analysis: at what cost does each
+optimization level come, and what would change at runtime?
+
+The Arduino IDE doesn't expose the gcc optimization level in any
+menu. The supported override path is a **`platform.local.txt`** file
+placed next to the Mbed Nano core's `platform.txt`. Concrete steps:
+
+**1. Locate the Mbed Nano core directory.** This is the folder
+containing `platform.txt` for the board you're building against.
+Replace `<version>` with whatever version you have installed (e.g.
+`4.2.4`):
+
+| OS | Path |
+|---|---|
+| macOS | `~/Library/Arduino15/packages/arduino/hardware/mbed_nano/<version>/` |
+| Linux | `~/.arduino15/packages/arduino/hardware/mbed_nano/<version>/` |
+| Windows | `%LOCALAPPDATA%\Arduino15\packages\arduino\hardware\mbed_nano\<version>\` |
+
+You should see `platform.txt`, `boards.txt`, and a `variants/`
+folder in that directory. Do **not** edit `platform.txt` — the IDE
+will overwrite it on the next core update.
+
+**2. Create `platform.local.txt`** in that same directory with this
+single line:
+
+```
+compiler.optimization_flags=-O3
+```
+
+**3. Fully quit and relaunch the Arduino IDE** (the IDE caches
+`platform.txt` at startup). Then verify the override took effect:
+turn on **File → Preferences → "Show verbose output during: compile"**,
+hit **Verify**, and confirm you see `-O3` in the gcc command lines
+scrolling by. The Mbed core's default is `-Os`, so the change is
+visible.
+
+**4. Record one data point.** Flash the sketch, capture mean latency
+over 100 inferences and the flash size the IDE reports. Write them
+down.
+
+**5. Repeat for `-O2` and `-O0`** by editing the one line in
+`platform.local.txt` (no restart needed between changes after the
+first — the IDE re-reads `platform.local.txt` on each build). Tabulate
+the three (latency, flash) pairs.
+
+**Sanity check:** all three numbers should differ from the IDE's
+default `-Os` build, and from each other. If two levels give you
+identical flash and latency, the override didn't take effect — recheck
+the file path and the verbose compile output.
+
+*(Alternative: if you're using the Arduino CLI rather than the IDE,
+pass `--build-property "compiler.optimization_flags=-O3"` on the
+command line instead. The IDE path above is the recommended route for
+this lab.)*
 
 ---
 

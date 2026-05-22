@@ -120,8 +120,16 @@ void loop() {
 
   // TODO(student) B.3: capture micros() AFTER Invoke(); add the elapsed
   // time to your accumulators. Every >= 100 inferences, print a line
-  // with min / mean / max (e.g. via MicroPrintf, prefix it "[LAT]" so
-  // it's easy to grep) and then reset the window. (handout §B.3)
+  // with min / mean / max (prefix it "[LAT]" so it's easy to grep)
+  // and then reset the window. (handout §B.3)
+  //
+  // Use Serial.print() / Serial.println() for the [LAT] line — the
+  // TFLM v2.4.0-ALPHA MicroPrintf in this lab does NOT accept the
+  // `l` length modifier, so `%lu` for the unsigned long that micros()
+  // returns prints garbage. Serial handles unsigned long natively.
+  // (Also note: micros() on the nRF52840 has ~4 us granularity, so
+  // for very short kernels the min may collapse to a single value
+  // across many samples — the mean is what to trust.)
 
   // Obtain the quantized output from model's output tensor
   int8_t y_quantized = output->data.int8[0];
